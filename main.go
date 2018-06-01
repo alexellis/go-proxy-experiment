@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -40,9 +41,11 @@ func httpPost() func(http.ResponseWriter, *http.Request) {
 		}
 
 		w.WriteHeader(res.StatusCode)
-		if err := res.Write(w); err != nil {
+
+		if _, err := io.CopyBuffer(w, res.Body, nil); err != nil {
 			log.Println(err)
 		}
+
 		defer res.Body.Close()
 
 	}
@@ -72,7 +75,7 @@ func clientPost(client *http.Client) func(http.ResponseWriter, *http.Request) {
 		}
 
 		w.WriteHeader(res.StatusCode)
-		if err := res.Write(w); err != nil {
+		if _, err := io.CopyBuffer(w, res.Body, nil); err != nil {
 			log.Println(err)
 		}
 

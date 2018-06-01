@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -33,7 +32,21 @@ func NewHTTPClientReverseProxy(baseURL *url.URL, timeout time.Duration) *HTTPCli
 		Timeout: timeout,
 	}
 
+	// Temporarily remove all customizations on the HTTP Client.
 	h.Client = &http.Client{}
+
+	// h.Client = &http.Client{
+	// 	Transport: &http.Transport{
+	// 			Proxy: http.ProxyFromEnvironment,
+	// 			DialContext: (&net.Dialer{
+	// 					Timeout:   timeout,
+	// 					KeepAlive: 1 * time.Second,
+	// 			}).DialContext,
+	// 			IdleConnTimeout:       120 * time.Millisecond,
+	// 			ExpectContinueTimeout: 1500 * time.Millisecond,
+	// 	},
+	// 	Timeout: timeout,
+	// }
 
 	return &h
 }
@@ -111,18 +124,18 @@ func forwardRequest(w http.ResponseWriter, r *http.Request, proxyClient *http.Cl
 		return badStatus, resErr
 	}
 
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
 	copyHeaders(w.Header(), &res.Header)
 
 	// Write status code
 	w.WriteHeader(res.StatusCode)
 
 	if res.Body != nil {
+
+		defer res.Body.Close()
+
 		// Copy the body over
 		io.CopyBuffer(w, res.Body, nil)
+
 	}
 
 	return res.StatusCode, nil
@@ -134,15 +147,6 @@ func copyHeaders(destination http.Header, source *http.Header) {
 		copy(vClone, v)
 		(destination)[k] = vClone
 	}
-}
-
-func getServiceName(urlValue string) string {
-	var serviceName string
-	forward := "/function/"
-	if strings.HasPrefix(urlValue, forward) {
-		serviceName = urlValue[len(forward):]
-	}
-	return serviceName
 }
 
 // LoggingNotifier notifies a log about a request
