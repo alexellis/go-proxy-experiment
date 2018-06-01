@@ -4,6 +4,7 @@ RUN mkdir -p /go/src/github.com/openfaas/proxy
 WORKDIR /go/src/github.com/openfaas/proxy
 
 COPY main.go    .
+COPY reverse.go .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /usr/bin/proxy .
 

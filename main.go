@@ -18,6 +18,9 @@ func main() {
 	http.HandleFunc("/client-post", clientPost(&c))
 
 	http.HandleFunc("/http-post", httpPost())
+
+	http.HandleFunc("/faas-post", faasPost())
+
 	log.Fatal(s.ListenAndServe())
 }
 
@@ -25,6 +28,8 @@ func httpPost() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		fn := query.Get("fn")
+
+		defer r.Body.Close()
 
 		res, err := http.Post(fmt.Sprintf("http://%s/", fn), r.Header.Get("Content-Type"), r.Body)
 		if err != nil {
@@ -38,6 +43,7 @@ func httpPost() func(http.ResponseWriter, *http.Request) {
 		if err := res.Write(w); err != nil {
 			log.Println(err)
 		}
+		defer res.Body.Close()
 
 	}
 }
@@ -47,6 +53,8 @@ func clientPost(client *http.Client) func(http.ResponseWriter, *http.Request) {
 		query := r.URL.Query()
 		fn := query.Get("fn")
 
+		defer r.Body.Close()
+
 		req, _ := http.NewRequest(r.Method, fmt.Sprintf("http://%s/", fn), r.Body)
 
 		res, err := client.Do(req)
@@ -55,6 +63,7 @@ func clientPost(client *http.Client) func(http.ResponseWriter, *http.Request) {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
+
 			return
 		}
 
