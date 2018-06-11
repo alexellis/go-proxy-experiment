@@ -10,8 +10,15 @@ import (
 
 func main() {
 
+	var port string
+	if val, exists := os.LookupEnv("port"); exists {
+		port = val
+	} else {
+		port = "8080"
+	}
+
 	s := &http.Server{
-		Addr:           fmt.Sprintf(":%s", os.Getenv("port")),
+		Addr:           fmt.Sprintf(":%s", port),
 		MaxHeaderBytes: 1 << 20, // Max header of 1MB
 	}
 
